@@ -1,0 +1,10 @@
+/* Touch Bar Brightness - العربية */
+"tb.label" = "السطوع";
+"popover.title" = "سطوع Touch Bar";
+"popover.auto" = "السطوع التلقائي";
+"btn.min" = "الحد";
+"btn.max" = "الأقصى";
+"btn.quit" = "خروج";
+"alert.no_tb.title" = "شريط اللمس غير متاح";
+"alert.no_tb.msg" = "تعذر تهيئة CoreBrightness.\nيتطلب هذا التطبيق MacBook Pro بشريط اللمس.";
+"statusbar.a11y" = "سطوع Touch Bar";

@@ -1,0 +1,11 @@
+/* Touch Bar Brightness - English */
+
+"tb.label" = "Brightness";
+"popover.title" = "Touch Bar Brightness";
+"popover.auto" = "Auto Brightness";
+"btn.min" = "Min";
+"btn.max" = "Max";
+"btn.quit" = "Quit";
+"alert.no_tb.title" = "Touch Bar Not Available";
+"alert.no_tb.msg" = "Could not initialize CoreBrightness.\nThis app requires a MacBook Pro with Touch Bar.";
+"statusbar.a11y" = "Touch Bar Brightness";

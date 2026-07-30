@@ -1,0 +1,10 @@
+/* Touch Bar Brightness - 日本語 */
+"tb.label" = "明るさ";
+"popover.title" = "Touch Bar の明るさ";
+"popover.auto" = "自動明るさ";
+"btn.min" = "最小";
+"btn.max" = "最大";
+"btn.quit" = "終了";
+"alert.no_tb.title" = "Touch Bar が見つかりません";
+"alert.no_tb.msg" = "CoreBrightness を初期化できませんでした。\nこのアプリには Touch Bar 付きの MacBook Pro が必要です。";
+"statusbar.a11y" = "Touch Bar の明るさ";

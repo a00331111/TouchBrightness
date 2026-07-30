@@ -1,0 +1,10 @@
+/* Touch Bar Brightness - Tiếng Việt */
+"tb.label" = "Độ sáng";
+"popover.title" = "Độ sáng Touch Bar";
+"popover.auto" = "Tự động chỉnh sáng";
+"btn.min" = "Tối thiểu";
+"btn.max" = "Tối đa";
+"btn.quit" = "Thoát";
+"alert.no_tb.title" = "Không tìm thấy Touch Bar";
+"alert.no_tb.msg" = "Không thể khởi tạo CoreBrightness.\nỨng dụng này yêu cầu MacBook Pro có Touch Bar.";
+"statusbar.a11y" = "Độ sáng Touch Bar";

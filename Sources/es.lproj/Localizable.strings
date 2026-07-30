@@ -1,0 +1,10 @@
+/* Touch Bar Brightness - Español */
+"tb.label" = "Brillo";
+"popover.title" = "Brillo de la Touch Bar";
+"popover.auto" = "Brillo automático";
+"btn.min" = "Mín.";
+"btn.max" = "Máx.";
+"btn.quit" = "Salir";
+"alert.no_tb.title" = "Touch Bar no disponible";
+"alert.no_tb.msg" = "No se pudo inicializar CoreBrightness.\nEsta aplicación requiere un MacBook Pro con Touch Bar.";
+"statusbar.a11y" = "Brillo de la Touch Bar";

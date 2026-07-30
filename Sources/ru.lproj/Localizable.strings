@@ -1,0 +1,10 @@
+/* Touch Bar Brightness - Русский */
+"tb.label" = "Яркость";
+"popover.title" = "Яркость Touch Bar";
+"popover.auto" = "Автояркость";
+"btn.min" = "Мин.";
+"btn.max" = "Макс.";
+"btn.quit" = "Выход";
+"alert.no_tb.title" = "Touch Bar не найдена";
+"alert.no_tb.msg" = "Не удалось инициализировать CoreBrightness.\nДля этого приложения требуется MacBook Pro с Touch Bar.";
+"statusbar.a11y" = "Яркость Touch Bar";

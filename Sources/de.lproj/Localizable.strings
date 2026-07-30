@@ -1,0 +1,10 @@
+/* Touch Bar Brightness - Deutsch */
+"tb.label" = "Helligkeit";
+"popover.title" = "Touch Bar Helligkeit";
+"popover.auto" = "Autohelligkeit";
+"btn.min" = "Min";
+"btn.max" = "Max";
+"btn.quit" = "Beenden";
+"alert.no_tb.title" = "Touch Bar nicht verfügbar";
+"alert.no_tb.msg" = "CoreBrightness konnte nicht initialisiert werden.\nDiese App erfordert ein MacBook Pro mit Touch Bar.";
+"statusbar.a11y" = "Touch Bar Helligkeit";
