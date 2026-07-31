@@ -2,6 +2,7 @@
 "tb.label" = "السطوع";
 "popover.title" = "سطوع Touch Bar";
 "popover.auto" = "السطوع التلقائي";
+"popover.launch" = "التشغيل عند تسجيل الدخول";
 "btn.min" = "الحد";
 "btn.max" = "الأقصى";
 "btn.quit" = "خروج";

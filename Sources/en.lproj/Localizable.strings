@@ -3,6 +3,7 @@
 "tb.label" = "Brightness";
 "popover.title" = "Touch Bar Brightness";
 "popover.auto" = "Auto Brightness";
+"popover.launch" = "Launch at Login";
 "btn.min" = "Min";
 "btn.max" = "Max";
 "btn.quit" = "Quit";

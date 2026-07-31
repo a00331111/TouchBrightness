@@ -2,6 +2,7 @@
 "tb.label" = "明るさ";
 "popover.title" = "Touch Bar の明るさ";
 "popover.auto" = "自動明るさ";
+"popover.launch" = "ログイン時に起動";
 "btn.min" = "最小";
 "btn.max" = "最大";
 "btn.quit" = "終了";

@@ -2,6 +2,7 @@
 "tb.label" = "Độ sáng";
 "popover.title" = "Độ sáng Touch Bar";
 "popover.auto" = "Tự động chỉnh sáng";
+"popover.launch" = "Khởi động cùng hệ thống";
 "btn.min" = "Tối thiểu";
 "btn.max" = "Tối đa";
 "btn.quit" = "Thoát";

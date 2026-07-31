@@ -2,6 +2,7 @@
 "tb.label" = "Яркость";
 "popover.title" = "Яркость Touch Bar";
 "popover.auto" = "Автояркость";
+"popover.launch" = "Запуск при входе";
 "btn.min" = "Мин.";
 "btn.max" = "Макс.";
 "btn.quit" = "Выход";

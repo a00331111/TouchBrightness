@@ -2,6 +2,7 @@
 "tb.label" = "Luminosité";
 "popover.title" = "Luminosité Touch Bar";
 "popover.auto" = "Luminosité auto";
+"popover.launch" = "Lancer au démarrage";
 "btn.min" = "Min";
 "btn.max" = "Max";
 "btn.quit" = "Quitter";

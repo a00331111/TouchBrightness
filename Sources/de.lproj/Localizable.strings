@@ -2,6 +2,7 @@
 "tb.label" = "Helligkeit";
 "popover.title" = "Touch Bar Helligkeit";
 "popover.auto" = "Autohelligkeit";
+"popover.launch" = "Bei Anmeldung starten";
 "btn.min" = "Min";
 "btn.max" = "Max";
 "btn.quit" = "Beenden";

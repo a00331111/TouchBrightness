@@ -2,6 +2,7 @@
 "tb.label" = "Brilho";
 "popover.title" = "Brilho da Touch Bar";
 "popover.auto" = "Brilho automático";
+"popover.launch" = "Iniciar no login";
 "btn.min" = "Mín.";
 "btn.max" = "Máx.";
 "btn.quit" = "Sair";

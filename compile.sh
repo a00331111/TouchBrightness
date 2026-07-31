@@ -9,6 +9,7 @@ APP_BUNDLE="${APP_NAME}.app"
 echo "Compiling ${APP_NAME}..."
 swiftc -O \
     -framework Cocoa \
+    -framework ServiceManagement \
     -o "${APP_NAME}" \
     Sources/main.swift
 

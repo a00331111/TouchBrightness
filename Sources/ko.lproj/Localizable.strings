@@ -2,6 +2,7 @@
 "tb.label" = "밝기";
 "popover.title" = "Touch Bar 밝기";
 "popover.auto" = "자동 밝기";
+"popover.launch" = "로그인 시 시작";
 "btn.min" = "최소";
 "btn.max" = "최대";
 "btn.quit" = "종료";

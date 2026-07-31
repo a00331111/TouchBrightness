@@ -2,6 +2,7 @@
 "tb.label" = "亮度";
 "popover.title" = "触控栏亮度";
 "popover.auto" = "自动亮度";
+"popover.launch" = "开机自启";
 "btn.min" = "最低";
 "btn.max" = "最高";
 "btn.quit" = "退出";

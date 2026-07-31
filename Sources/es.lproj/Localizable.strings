@@ -2,6 +2,7 @@
 "tb.label" = "Brillo";
 "popover.title" = "Brillo de la Touch Bar";
 "popover.auto" = "Brillo automático";
+"popover.launch" = "Iniciar al inicio";
 "btn.min" = "Mín.";
 "btn.max" = "Máx.";
 "btn.quit" = "Salir";

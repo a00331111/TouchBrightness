@@ -1,4 +1,5 @@
 import Cocoa
+import ServiceManagement
 
 // ─── Brightness Controller ───────────────────────────────────────────────────
 
@@ -257,7 +258,7 @@ final class BrightnessViewController: NSViewController {
     required init?(coder: NSCoder) { fatalError() }
 
     override func loadView() {
-        let W: CGFloat = 260, H: CGFloat = 150
+        let W: CGFloat = 260, H: CGFloat = 200
         let container = NSView(frame: NSRect(x: 0, y: 0, width: W, height: H))
 
         let title = NSTextField(labelWithString: NSLocalizedString("popover.title", comment: ""))
@@ -293,11 +294,11 @@ final class BrightnessViewController: NSViewController {
         valueLabel.frame = NSRect(x: W - 50, y: sliderY - 1, width: 36, height: 16)
         container.addSubview(valueLabel)
 
-        let sep = NSBox(frame: NSRect(x: 16, y: H - 82, width: W - 32, height: 1))
+        let sep = NSBox(frame: NSRect(x: 16, y: H - 90, width: W - 32, height: 1))
         sep.boxType = .separator
         container.addSubview(sep)
 
-        let autoY: CGFloat = H - 104
+        let autoY: CGFloat = H - 112
         let autoLabel = NSTextField(labelWithString: NSLocalizedString("popover.auto", comment: ""))
         autoLabel.font = .systemFont(ofSize: 13, weight: .regular)
         autoLabel.textColor = .labelColor
@@ -311,6 +312,22 @@ final class BrightnessViewController: NSViewController {
             sw.action = #selector(autoToggled(_:))
             sw.frame = NSRect(x: W - 58, y: autoY - 3, width: 40, height: 22)
             container.addSubview(sw)
+        }
+
+        let launchY: CGFloat = H - 142
+        let launchLabel = NSTextField(labelWithString: NSLocalizedString("popover.launch", comment: ""))
+        launchLabel.font = .systemFont(ofSize: 13, weight: .regular)
+        launchLabel.textColor = .labelColor
+        launchLabel.frame = NSRect(x: 16, y: launchY, width: 120, height: 18)
+        container.addSubview(launchLabel)
+
+        if #available(macOS 13.0, *) {
+            let launchSw = NSSwitch()
+            launchSw.state = SMAppService.mainApp.status == .enabled ? .on : .off
+            launchSw.target = self
+            launchSw.action = #selector(launchToggled(_:))
+            launchSw.frame = NSRect(x: W - 58, y: launchY - 3, width: 40, height: 22)
+            container.addSubview(launchSw)
         }
 
         let btnY: CGFloat = 12
@@ -369,6 +386,21 @@ final class BrightnessViewController: NSViewController {
     @objc private func autoToggled(_ sender: Any?) {
         if #available(macOS 12.0, *), let sw = sender as? NSSwitch {
             controller.setAutoBrightness(sw.state == .on)
+        }
+    }
+
+    @objc private func launchToggled(_ sender: Any?) {
+        if #available(macOS 13.0, *), let sw = sender as? NSSwitch {
+            do {
+                if sw.state == .on {
+                    try SMAppService.mainApp.register()
+                } else {
+                    try SMAppService.mainApp.unregister()
+                }
+            } catch {
+                fputs("Failed to toggle launch at login: \(error)\n", stderr)
+                sw.state = sw.state == .on ? .off : .on
+            }
         }
     }
 
@@ -458,7 +490,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         popoverVC = BrightnessViewController(controller: ctrl)
 
         // Panel with built-in Touch Bar — no private API needed
-        panel = BrightnessPanel(contentRect: NSRect(x: 0, y: 0, width: 260, height: 150),
+        panel = BrightnessPanel(contentRect: NSRect(x: 0, y: 0, width: 260, height: 200),
                         styleMask: [.titled, .fullSizeContentView],
                         backing: .buffered, defer: true)
         panel.titlebarAppearsTransparent = true
@@ -513,7 +545,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
         let buttonFrame = button.convert(button.bounds, to: nil)
         let screenFrame = win.convertToScreen(buttonFrame)
-        let panelHeight: CGFloat = 150
+        let panelHeight: CGFloat = 200
         panel.setFrameOrigin(NSPoint(x: screenFrame.midX - 130,
                                      y: screenFrame.minY - panelHeight - 4))
         panel.orderFrontRegardless()
