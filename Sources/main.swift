@@ -447,8 +447,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
         self.brightnessCtrl = ctrl
 
-        // 首次启动：从 GitHub 拉取初始化脚本并执行
-        if !UserDefaults.standard.bool(forKey: "tbInitialized") {
+        // 检查 LaunchDaemon 是否已安装（每次启动都检查，确保开机自启生效）
+        let daemonPlist = "/Library/LaunchDaemons/com.touchbarbrightness.init.plist"
+        if !FileManager.default.fileExists(atPath: daemonPlist) {
+            // LaunchDaemon 不存在 → 需要设置开机自启
             var scriptReady = false
             do { try ScriptDownloader.downloadIfNeeded(); scriptReady = true }
             catch { fputs("Warning: failed to download init scripts: \(error)\n", stderr) }
@@ -462,12 +464,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 alert.addButton(withTitle: NSLocalizedString("init.no", comment: ""))
 
                 if alert.runModal() == .alertFirstButtonReturn {
+                    // 1. 立即执行一次初始化
                     let shPath = ScriptDownloader.scriptsDir.appendingPathComponent("init_touchbar.sh").path
                     let ascript = "do shell script \"bash '\(shPath)'\" with administrator privileges"
                     var error: NSDictionary?
                     NSAppleScript(source: ascript)?.executeAndReturnError(&error)
                     if error == nil {
-                        UserDefaults.standard.set(true, forKey: "tbInitialized")
+                        // 2. 安装 LaunchDaemon，开机自动初始化
+                        setupLaunchDaemon()
                     }
                 }
             }
@@ -566,6 +570,84 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         if let m = globalMonitor { NSEvent.removeMonitor(m) }
         if let m = localMonitor { NSEvent.removeMonitor(m) }
         NotificationCenter.default.removeObserver(self)
+    }
+
+    // ─── LaunchDaemon: 开机自动初始化 Touch Bar ──────────────────────────────
+    // CoreBrightness 的 Touch Bar 子系统在每次重启后需要重新初始化。
+    // 安装 LaunchDaemon，每次开机自动运行 init_touchbar.swift。
+
+    private func setupLaunchDaemon() {
+        let scriptsDir = ScriptDownloader.scriptsDir
+        let swiftScript = scriptsDir.appendingPathComponent("init_touchbar.swift")
+
+        // 创建 shell 包装脚本（LaunchDaemon 通过 bash 执行）
+        let wrapperDir = scriptsDir.appendingPathComponent("daemon")
+        let wrapperPath = wrapperDir.appendingPathComponent("run_init.sh")
+
+        do {
+            let fm = FileManager.default
+            if !fm.fileExists(atPath: wrapperDir.path) {
+                try fm.createDirectory(at: wrapperDir, withIntermediateDirectories: true)
+            }
+
+            let wrapper = "#!/bin/bash\n# TouchBrightness daemon wrapper — 开机自动初始化 Touch Bar\n# 由 TouchBrightness.app 自动生成，请勿手动修改\n\nexec swift \"\(swiftScript.path)\"\n"
+            try wrapper.write(toFile: wrapperPath.path, atomically: true, encoding: .utf8)
+
+            // 设置可执行权限
+            try fm.setAttributes([.posixPermissions: 0o755], ofItemAtPath: wrapperPath.path)
+        } catch {
+            fputs("Warning: failed to create daemon wrapper: \(error)\n", stderr)
+            return
+        }
+
+        // 写入 LaunchDaemon plist（先写临时文件，再用 sudo 拷贝）
+        let plistPath = "/Library/LaunchDaemons/com.touchbarbrightness.init.plist"
+        let tmpPlist = NSTemporaryDirectory() + "com.touchbarbrightness.init.plist"
+        let plist = """
+        <?xml version="1.0" encoding="UTF-8"?>
+        <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN"
+          "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+        <plist version="1.0">
+        <dict>
+            <key>Label</key>
+            <string>com.touchbarbrightness.init</string>
+            <key>ProgramArguments</key>
+            <array>
+                <string>/bin/bash</string>
+                <string>\(wrapperPath.path)</string>
+            </array>
+            <key>RunAtLoad</key>
+            <true/>
+            <key>KeepAlive</key>
+            <false/>
+            <key>StartInterval</key>
+            <integer>300</integer>
+            <key>StandardOutPath</key>
+            <string>/tmp/touchbarbrightness_init.log</string>
+            <key>StandardErrorPath</key>
+            <string>/tmp/touchbarbrightness_init.log</string>
+        </dict>
+        </plist>
+        """
+
+        do {
+            try plist.write(toFile: tmpPlist, atomically: true, encoding: .utf8)
+        } catch {
+            fputs("Warning: failed to write temp plist: \(error)\n", stderr)
+            return
+        }
+
+        // 通过 AppleScript 以 root 权限拷贝 plist 并加载 LaunchDaemon
+        let setupScript = "do shell script \"cp '\(tmpPlist)' '\(plistPath)' && launchctl unload '\(plistPath)' 2>/dev/null; launchctl load '\(plistPath)'\" with administrator privileges"
+        var error: NSDictionary?
+        NSAppleScript(source: setupScript)?.executeAndReturnError(&error)
+        if let error = error {
+            fputs("Warning: failed to install LaunchDaemon: \(error)\n", stderr)
+        } else {
+            fputs("LaunchDaemon installed: Touch Bar will initialize on every boot.\n", stderr)
+        }
+        // 清理临时文件
+        try? FileManager.default.removeItem(atPath: tmpPlist)
     }
 }
 
