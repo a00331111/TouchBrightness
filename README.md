@@ -18,6 +18,12 @@ macOS 菜单栏工具，用于调节 Touch Bar 屏幕亮度。
 - 无 Dock 图标，纯菜单栏应用
 - 开机自启支持
 
+## 首次使用
+
+首次打开应用时，程序会自动从 GitHub 拉取初始化脚本并提示你运行。该脚本需要管理员权限，用于初始化 CoreBrightness 的 Touch Bar 子系统——这是应用能够读写 Touch Bar 亮度的前提。
+
+初始化脚本存储在 `~/Library/Application Support/TouchBrightness/`。
+
 ## 编译
 
 需要 Xcode Command Line Tools（提供 `swiftc`）：
@@ -40,11 +46,18 @@ open TouchBrightness.app
 
 将 `TouchBrightness.app` 添加到 **系统设置 → 通用 → 登录项** 即可。
 
+## 卸载
+
+1. 退出应用
+2. 删除 `TouchBrightness.app`
+3. （可选）删除初始化脚本：`rm -rf ~/Library/Application\ Support/TouchBrightness`
+
 ## 要求
 
 - macOS 12+ (Monterey)
 - 带 Touch Bar 的 MacBook Pro
 - Xcode Command Line Tools
+- 首次使用需要网络连接（下载初始化脚本）
 
 ## 技术说明
 
@@ -52,6 +65,7 @@ open TouchBrightness.app
 - 通过 `CoreBrightness.framework` 私有 API 读写 Touch Bar 亮度
 - 使用 `NSPanel` + `makeTouchBar()` 标准 API 在 Touch Bar 上显示控件
 - `LSUIElement` 模式运行，不显示 Dock 图标
+- 初始化脚本从 GitHub 动态拉取，便于独立更新
 
 ## 许可
 

@@ -111,6 +111,42 @@ final class BrightnessController {
     }
 }
 
+// ─── Script Downloader ──────────────────────────────────────────────────────
+
+private enum ScriptDownloader {
+
+    static let repo = "a00331111/TouchBrightness"
+    static var scriptsDir: URL {
+        let appSupport = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first!
+        return appSupport.appendingPathComponent("TouchBrightness", isDirectory: true)
+    }
+
+    static func downloadIfNeeded() throws {
+        let fm = FileManager.default
+        if !fm.fileExists(atPath: scriptsDir.path) {
+            try fm.createDirectory(at: scriptsDir, withIntermediateDirectories: true)
+        }
+        let shPath = scriptsDir.appendingPathComponent("init_touchbar.sh")
+        let swiftPath = scriptsDir.appendingPathComponent("init_touchbar.swift")
+        if fm.fileExists(atPath: shPath.path) && fm.fileExists(atPath: swiftPath.path) { return }
+
+        let base = "https://raw.githubusercontent.com/\(repo)/main/Sources"
+        try download(url: "\(base)/init_touchbar.sh", to: shPath)
+        try download(url: "\(base)/init_touchbar.swift", to: swiftPath)
+    }
+
+    private static func download(url: String, to dest: URL) throws {
+        let sem = DispatchSemaphore(value: 0)
+        var fileData: Data?
+        URLSession.shared.dataTask(with: URL(string: url)!) { data, _, _ in
+            fileData = data; sem.signal()
+        }.resume()
+        sem.wait()
+        guard let data = fileData else { throw NSError(domain: "ScriptDL", code: 1) }
+        try data.write(to: dest)
+    }
+}
+
 // ─── Touch Bar Manager ───────────────────────────────────────────────────────
 
 private let tbMainID = NSTouchBarItem.Identifier("com.touchbarbrightness.main")
@@ -378,6 +414,33 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             return
         }
         self.brightnessCtrl = ctrl
+
+        // 首次启动：从 GitHub 拉取初始化脚本并执行
+        if !UserDefaults.standard.bool(forKey: "tbInitialized") {
+            var scriptReady = false
+            do { try ScriptDownloader.downloadIfNeeded(); scriptReady = true }
+            catch { fputs("Warning: failed to download init scripts: \(error)\n", stderr) }
+
+            if scriptReady {
+                let alert = NSAlert()
+                alert.messageText = NSLocalizedString("init.title", comment: "")
+                alert.informativeText = NSLocalizedString("init.msg", comment: "")
+                alert.alertStyle = .informational
+                alert.addButton(withTitle: NSLocalizedString("init.yes", comment: ""))
+                alert.addButton(withTitle: NSLocalizedString("init.no", comment: ""))
+
+                if alert.runModal() == .alertFirstButtonReturn {
+                    let shPath = ScriptDownloader.scriptsDir.appendingPathComponent("init_touchbar.sh").path
+                    let ascript = "do shell script \"bash '\(shPath)'\" with administrator privileges"
+                    var error: NSDictionary?
+                    NSAppleScript(source: ascript)?.executeAndReturnError(&error)
+                    if error == nil {
+                        UserDefaults.standard.set(true, forKey: "tbInitialized")
+                    }
+                }
+            }
+        }
+
         self.touchBarManager = TouchBarManager(controller: ctrl)
 
         statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.squareLength)

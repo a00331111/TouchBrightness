@@ -9,3 +9,7 @@
 "alert.no_tb.title" = "Touch Bar Not Available";
 "alert.no_tb.msg" = "Could not initialize CoreBrightness.\nThis app requires a MacBook Pro with Touch Bar.";
 "statusbar.a11y" = "Touch Bar Brightness";
+"init.title" = "Initialize Touch Bar";
+"init.msg" = "Touch Bar services need to be initialized on first run.\nThis requires administrator privileges for a one-time setup.";
+"init.yes" = "Initialize";
+"init.no" = "Skip";

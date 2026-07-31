@@ -8,3 +8,7 @@
 "alert.no_tb.title" = "未检测到触控栏";
 "alert.no_tb.msg" = "无法初始化 CoreBrightness。\n此应用需要带触控栏的 MacBook Pro。";
 "statusbar.a11y" = "触控栏亮度";
+"init.title" = "初始化触控栏";
+"init.msg" = "首次使用需要初始化触控栏服务。\n需要管理员权限运行一次初始化脚本。";
+"init.yes" = "初始化";
+"init.no" = "跳过";
