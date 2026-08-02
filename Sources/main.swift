@@ -1,6 +1,15 @@
 import Cocoa
 import ServiceManagement
 
+// ─── .tbinfo 持久化 ──────────────────────────────────────────────────────────
+// 每次亮度变化时写入 ~/.tbinfo，init_touchbar.swift 通过 LaunchDaemon
+// 定期读取该文件来维持 Touch Bar 亮度不被系统重置。
+
+private func writeTbinfo(_ value: Float) {
+    let path = NSHomeDirectory() + "/.tbinfo"
+    try? "\(value)".write(toFile: path, atomically: true, encoding: .utf8)
+}
+
 // ─── Brightness Controller ───────────────────────────────────────────────────
 
 final class BrightnessController {
@@ -210,6 +219,7 @@ final class TouchBarManager: NSObject, NSTouchBarDelegate {
     @objc private func touchBarSliderChanged(_ sender: NSSlider) {
         let v = Float(sender.doubleValue)
         brightnessController.setBrightness(v)
+        writeTbinfo(v)
         if let container = sender.superview {
             for sub in container.subviews where sub.identifier?.rawValue == "pctLabel" {
                 (sub as? NSTextField)?.stringValue = pct(v)
@@ -378,6 +388,7 @@ final class BrightnessViewController: NSViewController {
     @objc private func sliderChanged(_ sender: NSSlider) {
         let v = sender.floatValue
         controller.setBrightness(v)
+        writeTbinfo(v)
         valueLabel.stringValue = pct(v)
         NotificationCenter.default.post(name: .touchBarBrightnessChanged, object: nil,
                                         userInfo: ["value": v])
@@ -406,11 +417,13 @@ final class BrightnessViewController: NSViewController {
 
     @objc private func setMax() {
         slider.floatValue = 1.0; controller.setBrightness(1.0)
+        writeTbinfo(1.0)
         valueLabel.stringValue = pct(1.0)
     }
 
     @objc private func setMin() {
         slider.floatValue = 0.0; controller.setBrightness(0.0)
+        writeTbinfo(0.0)
         valueLabel.stringValue = pct(0.0)
     }
 
@@ -620,6 +633,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             <true/>
             <key>KeepAlive</key>
             <false/>
+            <key>StartInterval</key>
+            <integer>300</integer>
             <key>StandardOutPath</key>
             <string>/tmp/touchbarbrightness_init.log</string>
             <key>StandardErrorPath</key>

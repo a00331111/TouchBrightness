@@ -44,30 +44,20 @@ let copyFn = unsafeBitCast(copyImp, to: CopyFunc.self)
 // 5) 关闭 Touch Bar 自动亮度（防止系统覆盖手动设置）
 _ = setFn3(bsc, sel3, 0 as NSNumber, "DisplayBrightnessAuto" as NSString, TOUCHBAR_DISPLAY_ID)
 
-// 6) 智能亮度初始化：读取当前亮度，只在异常值时才设置默认值
-var currentBrightness: Float?
-if let val = copyFn(bsc, copySel, "DisplayBrightness" as NSString, TOUCHBAR_DISPLAY_ID) {
-    if let num = val as? NSNumber {
-        currentBrightness = num.floatValue
-    } else if let str = val as? String, let num = Float(str) {
-        currentBrightness = num
-    }
+// 6) 从 ~/.tbinfo 读取用户设定的亮度值，强制设置
+let tbinfoPath = NSHomeDirectory() + "/.tbinfo"
+var targetBrightness: Float = 0.5  // 默认值
+
+if let data = FileManager.default.contents(atPath: tbinfoPath),
+   let str = String(data: data, encoding: .utf8)?.trimmingCharacters(in: .whitespacesAndNewlines),
+   let val = Float(str) {
+    targetBrightness = val
+    print("从 .tbinfo 读取亮度: \(targetBrightness)")
+} else {
+    print(".tbinfo 不存在或无法解析，使用默认值 0.5")
 }
 
-if let current = currentBrightness {
-    print("当前 Touch Bar 亮度: \(current)")
-    // 只在异常值（接近 0 或 1）时才设置默认值
-    // 这些值通常是系统重置后的默认状态
-    if current < 0.01 || current > 0.99 {
-        print("亮度异常（\(current)），设置为默认值 50%")
-        _ = setFn3(bsc, sel3, 0.5 as NSNumber, "DisplayBrightness" as NSString, TOUCHBAR_DISPLAY_ID)
-    } else {
-        print("亮度正常，保持用户设置")
-    }
-} else {
-    print("无法读取亮度，设置为默认值 50%")
-    _ = setFn3(bsc, sel3, 0.5 as NSNumber, "DisplayBrightness" as NSString, TOUCHBAR_DISPLAY_ID)
-}
+_ = setFn3(bsc, sel3, targetBrightness as NSNumber, "DisplayBrightness" as NSString, TOUCHBAR_DISPLAY_ID)
 
 // 7) 关闭全局自动亮度
 let setSel = NSSelectorFromString("setProperty:forKey:")
