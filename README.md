@@ -20,7 +20,7 @@
     <img src="https://img.shields.io/github/downloads/a00331111/TouchBrightness/total" alt="Downloads">
   </a>
   <a href="https://github.com/a00331111/TouchBrightness/blob/main/LICENSE">
-    <img src="https://img.shields.io/github/license/a00331111/TouchBrightness" alt="License">
+    <img src="https://img.shields.io/badge/license-GPL--3.0-blue" alt="License">
   </a>
 </p>
 
@@ -138,6 +138,14 @@ TouchBrightness.app
 - 带 Touch Bar 的 MacBook Pro（2016–2020 款）
 - 首次使用需网络连接（下载初始化脚本）
 
-## 许可
+## 许可证
 
-[MIT License](LICENSE)
+本项目采用 [GNU General Public License v3.0](LICENSE) 开源。
+
+| 使用场景 | 许可 | 费用 |
+|----------|------|------|
+| 个人使用 | GPL-3.0 | 免费 |
+| 开源项目（与本项目协议兼容） | GPL-3.0 | 免费 |
+| 商业 / 闭源使用 | 商业授权 | 💰 付费 |
+
+**商业授权**：如果你的公司或商业项目需要将 TouchBrightness 集成到闭源产品中，请通过 [Issues](https://github.com/a00331111/TouchBrightness/issues) 联系我获取商业授权。
