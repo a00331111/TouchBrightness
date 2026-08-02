@@ -1,5 +1,6 @@
 import Cocoa
 import ServiceManagement
+import CommonCrypto
 
 // ─── .tbinfo 持久化 ──────────────────────────────────────────────────────────
 // 每次亮度变化时写入 ~/.tbinfo，init_touchbar.swift 通过 LaunchDaemon
@@ -8,6 +9,21 @@ import ServiceManagement
 private func writeTbinfo(_ value: Float) {
     let path = NSHomeDirectory() + "/.tbinfo"
     try? "\(value)".write(toFile: path, atomically: true, encoding: .utf8)
+}
+
+// ─── MD5 工具 ────────────────────────────────────────────────────────────────
+
+private func md5(_ data: Data) -> String {
+    var digest = [UInt8](repeating: 0, count: Int(CC_MD5_DIGEST_LENGTH))
+    data.withUnsafeBytes { buf in
+        _ = CC_MD5(buf.baseAddress, CC_LONG(buf.count), &digest)
+    }
+    return digest.map { String(format: "%02x", $0) }.joined()
+}
+
+private func md5(ofFile path: String) -> String? {
+    guard let data = FileManager.default.contents(atPath: path) else { return nil }
+    return md5(data)
 }
 
 // ─── Brightness Controller ───────────────────────────────────────────────────
@@ -121,7 +137,7 @@ final class BrightnessController {
     }
 }
 
-// ─── Script Downloader ──────────────────────────────────────────────────────
+// ─── Script Downloader (with MD5 verification) ─────────────────────────────
 
 private enum ScriptDownloader {
 
@@ -131,29 +147,89 @@ private enum ScriptDownloader {
         return appSupport.appendingPathComponent("TouchBrightness", isDirectory: true)
     }
 
+    /// 下载脚本并校验 MD5 完整性。
+    /// 1. 从 GitHub 下载 checksums.md5
+    /// 2. 比较本地文件 MD5 与远端值
+    /// 3. 不一致则重新下载，下载后再验证一次
     static func downloadIfNeeded() throws {
         let fm = FileManager.default
         if !fm.fileExists(atPath: scriptsDir.path) {
             try fm.createDirectory(at: scriptsDir, withIntermediateDirectories: true)
         }
-        let shPath = scriptsDir.appendingPathComponent("init_touchbar.sh")
-        let swiftPath = scriptsDir.appendingPathComponent("init_touchbar.swift")
-        if fm.fileExists(atPath: shPath.path) && fm.fileExists(atPath: swiftPath.path) { return }
 
         let base = "https://raw.githubusercontent.com/\(repo)/main/Sources"
+        let checksumsURL = "\(base)/checksums.md5"
+        let shPath = scriptsDir.appendingPathComponent("init_touchbar.sh")
+        let swiftPath = scriptsDir.appendingPathComponent("init_touchbar.swift")
+
+        // 下载 checksums
+        guard let checksumsData = downloadSync(url: checksumsURL),
+              let checksumsText = String(data: checksumsData, encoding: .utf8) else {
+            // checksums 下载失败，回退：如果脚本不存在就下载，不校验
+            if !fm.fileExists(atPath: shPath.path) || !fm.fileExists(atPath: swiftPath.path) {
+                try download(url: "\(base)/init_touchbar.sh", to: shPath)
+                try download(url: "\(base)/init_touchbar.swift", to: swiftPath)
+            }
+            return
+        }
+
+        // 解析 checksums: "md5hash  filename\n"
+        var expected: [String: String] = [:]
+        for line in checksumsText.components(separatedBy: .newlines) {
+            let parts = line.split(separator: " ", maxSplits: 1)
+            if parts.count == 2 {
+                expected[String(parts[1])] = String(parts[0])
+            }
+        }
+
+        // 检查本地文件是否需要更新
+        let files = [("init_touchbar.sh", shPath), ("init_touchbar.swift", swiftPath)]
+        var needsDownload = false
+
+        for (name, localPath) in files {
+            guard let expectedMD5 = expected[name] else {
+                needsDownload = true; break
+            }
+            if let localMD5 = md5(ofFile: localPath.path), localMD5 == expectedMD5 {
+                continue // 一致，跳过
+            }
+            needsDownload = true
+            break
+        }
+
+        if !needsDownload { return }
+
+        // 重新下载
+        fputs("ScriptDownloader: checksum mismatch or missing, re-downloading...\n", stderr)
         try download(url: "\(base)/init_touchbar.sh", to: shPath)
         try download(url: "\(base)/init_touchbar.swift", to: swiftPath)
+
+        // 下载后校验
+        for (name, localPath) in files {
+            if let expectedMD5 = expected[name], let localMD5 = md5(ofFile: localPath.path) {
+                if localMD5 != expectedMD5 {
+                    throw NSError(domain: "ScriptDL", code: 2,
+                                  userInfo: [NSLocalizedDescriptionKey: "MD5 verification failed for \(name): expected \(expectedMD5), got \(localMD5)"])
+                }
+            }
+        }
     }
 
     private static func download(url: String, to dest: URL) throws {
+        guard let data = downloadSync(url: url) else {
+            throw NSError(domain: "ScriptDL", code: 1, userInfo: [NSLocalizedDescriptionKey: "Failed to download \(url)"])
+        }
+        try data.write(to: dest)
+    }
+
+    private static func downloadSync(url: String) -> Data? {
         let sem = DispatchSemaphore(value: 0)
-        var fileData: Data?
+        var result: Data?
         URLSession.shared.dataTask(with: URL(string: url)!) { data, _, _ in
-            fileData = data; sem.signal()
+            result = data; sem.signal()
         }.resume()
         sem.wait()
-        guard let data = fileData else { throw NSError(domain: "ScriptDL", code: 1) }
-        try data.write(to: dest)
+        return result
     }
 }
 
@@ -460,10 +536,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
         self.brightnessCtrl = ctrl
 
-        // 检查 LaunchDaemon 是否已安装（每次启动都检查，确保开机自启生效）
+        // 检查 LaunchDaemon 是否已安装且已加载（每次启动都检查，确保开机自启生效）
         let daemonPlist = "/Library/LaunchDaemons/com.touchbarbrightness.init.plist"
-        if !FileManager.default.fileExists(atPath: daemonPlist) {
-            // LaunchDaemon 不存在 → 需要设置开机自启
+        let daemonLoaded = isDaemonLoaded()
+
+        if !FileManager.default.fileExists(atPath: daemonPlist) || !daemonLoaded {
+            // LaunchDaemon 不存在或未加载 → 需要设置开机自启
             var scriptReady = false
             do { try ScriptDownloader.downloadIfNeeded(); scriptReady = true }
             catch { fputs("Warning: failed to download init scripts: \(error)\n", stderr) }
@@ -588,6 +666,26 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     // ─── LaunchDaemon: 开机自动初始化 Touch Bar ──────────────────────────────
     // CoreBrightness 的 Touch Bar 子系统在每次重启后需要重新初始化。
     // 安装 LaunchDaemon，每次开机自动运行 init_touchbar.swift。
+
+    /// 检查 LaunchDaemon 是否已被 launchctl 加载
+    private func isDaemonLoaded() -> Bool {
+        let proc = Process()
+        proc.executableURL = URL(fileURLWithPath: "/bin/launchctl")
+        proc.arguments = ["list", "com.touchbarbrightness.init"]
+        let pipe = Pipe()
+        proc.standardOutput = pipe
+        proc.standardError = pipe
+        do {
+            try proc.run()
+            proc.waitUntilExit()
+            let data = pipe.fileHandleForReading.readDataToEndOfFile()
+            let output = String(data: data, encoding: .utf8) ?? ""
+            // 如果输出包含 "Could not find service" 或退出码非0，说明未加载
+            return proc.terminationStatus == 0 && !output.contains("Could not find service")
+        } catch {
+            return false
+        }
+    }
 
     private func setupLaunchDaemon() {
         let scriptsDir = ScriptDownloader.scriptsDir
