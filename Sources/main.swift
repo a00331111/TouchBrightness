@@ -620,8 +620,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             <true/>
             <key>KeepAlive</key>
             <false/>
-            <key>StartInterval</key>
-            <integer>300</integer>
             <key>StandardOutPath</key>
             <string>/tmp/touchbarbrightness_init.log</string>
             <key>StandardErrorPath</key>
