@@ -45,7 +45,14 @@ let copyFn = unsafeBitCast(copyImp, to: CopyFunc.self)
 _ = setFn3(bsc, sel3, 0 as NSNumber, "DisplayBrightnessAuto" as NSString, TOUCHBAR_DISPLAY_ID)
 
 // 6) 从 ~/.tbinfo 读取用户设定的亮度值，强制设置
-let home = String(cString: getpwuid(getuid())!.pointee.pw_dir)
+// LaunchDaemon 以 root 运行时，通过命令行参数传入用户 home 路径；
+// 手动执行时回退到 getpwuid（普通用户下正确）。
+let home: String
+if CommandLine.arguments.count > 1 {
+    home = CommandLine.arguments[1]
+} else {
+    home = String(cString: getpwuid(getuid())!.pointee.pw_dir)
+}
 let tbinfoPath = home + "/.tbinfo"
 var targetBrightness: Float = 0.5  // 默认值
 

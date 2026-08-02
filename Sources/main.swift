@@ -701,7 +701,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 try fm.createDirectory(at: wrapperDir, withIntermediateDirectories: true)
             }
 
-            let wrapper = "#!/bin/bash\n# TouchBrightness daemon wrapper — 开机自动初始化 Touch Bar\n# 由 TouchBrightness.app 自动生成，请勿手动修改\n\nexec swift \"\(swiftScript.path)\"\n"
+            let wrapper = "#!/bin/bash\n# TouchBrightness daemon wrapper — 开机自动初始化 Touch Bar\n# 由 TouchBrightness.app 自动生成，请勿手动修改\n\nREAL_USER=\\$(stat -f%Su /dev/console)\nUSER_HOME=\\$(eval echo ~\\$REAL_USER)\nexec swift \"\(swiftScript.path)\" \"\\$USER_HOME\"\n"
             try wrapper.write(toFile: wrapperPath.path, atomically: true, encoding: .utf8)
 
             // 设置可执行权限

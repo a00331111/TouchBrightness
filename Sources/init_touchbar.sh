@@ -61,10 +61,14 @@ if $INSTALL_DAEMON; then
     mkdir -p "$WRAPPER_DIR"
 
     # 创建 shell 包装脚本
+    # 通过 /dev/console owner 获取真实用户 home（LaunchDaemon 以 root 运行）
     cat > "$WRAPPER_PATH" << WRAPPER
 #!/bin/bash
 # TouchBrightness daemon wrapper — 开机自动初始化 Touch Bar
-exec swift "${SWIFT_SCRIPT}"
+# 由 TouchBrightness.app 自动生成，请勿手动修改
+REAL_USER=\$(stat -f%Su /dev/console)
+USER_HOME=\$(eval echo ~\$REAL_USER)
+exec swift "${SWIFT_SCRIPT}" "\$USER_HOME"
 WRAPPER
     chmod 755 "$WRAPPER_PATH"
 
