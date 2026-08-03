@@ -327,6 +327,12 @@ private final class BrightnessPanel: NSPanel {
         tb.defaultItemIdentifiers = [tbMainID]
         return tb
     }
+
+    /// 强制重建 Touch Bar（开机自启时 OS 可能尚未就绪，需延迟重试）
+    func rebuildTouchBar() {
+        self.touchBar = nil
+        self.touchBar = makeTouchBar()
+    }
 }
 
 // ─── Popover View Controller ─────────────────────────────────────────────────
@@ -567,6 +573,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                     }
                 }
             }
+        } else {
+            // LaunchDaemon 已存在 → 确保 wrapper 脚本是最新的（修复旧版本的 shell 转义 bug）
+            refreshDaemonWrapper()
         }
 
         self.touchBarManager = TouchBarManager(controller: ctrl)
@@ -647,6 +656,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         panel.orderFrontRegardless()
         panel.makeKey()
         // Touch Bar appears automatically via makeTouchBar() when panel becomes key
+
+        // 开机自启场景：Touch Bar 硬件可能尚未就绪，延迟 1 秒后强制重建
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) { [weak self] in
+            guard let self = self, self.panel.isVisible else { return }
+            self.panel.rebuildTouchBar()
+        }
     }
 
     private func dismissPanel() {
@@ -682,7 +697,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 try fm.createDirectory(at: wrapperDir, withIntermediateDirectories: true)
             }
 
-            let wrapper = "#!/bin/bash\n# TouchBrightness daemon wrapper — 开机自动初始化 Touch Bar\n# 由 TouchBrightness.app 自动生成，请勿手动修改\n\nREAL_USER=\\$(stat -f%Su /dev/console)\nUSER_HOME=\\$(eval echo ~\\$REAL_USER)\nexec swift \"\(swiftScript.path)\" \"\\$USER_HOME\"\n"
+            let wrapper = "#!/bin/bash\n# TouchBrightness daemon wrapper — 开机自动初始化 Touch Bar\n# 由 TouchBrightness.app 自动生成，请勿手动修改\n\nREAL_USER=$(stat -f%Su /dev/console)\nUSER_HOME=$(eval echo ~$REAL_USER)\nexec swift \"\(swiftScript.path)\" \"$USER_HOME\"\n"
             try wrapper.write(toFile: wrapperPath.path, atomically: true, encoding: .utf8)
 
             // 设置可执行权限
@@ -740,6 +755,21 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
         // 清理临时文件
         try? FileManager.default.removeItem(atPath: tmpPlist)
+    }
+
+    /// 仅重新生成 wrapper 脚本（不重新安装 plist），用于修复旧版本的 shell 转义 bug
+    private func refreshDaemonWrapper() {
+        let scriptsDir = ScriptDownloader.scriptsDir
+        let swiftScript = scriptsDir.appendingPathComponent("init_touchbar.swift")
+        let wrapperPath = scriptsDir.appendingPathComponent("daemon/run_init.sh")
+
+        let wrapper = "#!/bin/bash\n# TouchBrightness daemon wrapper — 开机自动初始化 Touch Bar\n# 由 TouchBrightness.app 自动生成，请勿手动修改\n\nREAL_USER=$(stat -f%Su /dev/console)\nUSER_HOME=$(eval echo ~$REAL_USER)\nexec swift \"\(swiftScript.path)\" \"$USER_HOME\"\n"
+        do {
+            try wrapper.write(toFile: wrapperPath.path, atomically: true, encoding: .utf8)
+            try FileManager.default.setAttributes([.posixPermissions: 0o755], ofItemAtPath: wrapperPath.path)
+        } catch {
+            fputs("Warning: failed to refresh daemon wrapper: \(error)\n", stderr)
+        }
     }
 }
 
