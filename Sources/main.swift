@@ -536,12 +536,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
         self.brightnessCtrl = ctrl
 
-        // 检查 LaunchDaemon 是否已安装且已加载（每次启动都检查，确保开机自启生效）
+        // 检查 LaunchDaemon plist 是否已安装（存在即代表已配置）
+        // 注意：不能用 launchctl list 检测，因为 LaunchDaemon 在 system domain，
+        // 普通用户无权查询，永远返回 "Could not find service"。
         let daemonPlist = "/Library/LaunchDaemons/com.touchbarbrightness.init.plist"
-        let daemonLoaded = isDaemonLoaded()
 
-        if !FileManager.default.fileExists(atPath: daemonPlist) || !daemonLoaded {
-            // LaunchDaemon 不存在或未加载 → 需要设置开机自启
+        if !FileManager.default.fileExists(atPath: daemonPlist) {
+            // LaunchDaemon 不存在 → 需要设置开机自启
             var scriptReady = false
             do { try ScriptDownloader.downloadIfNeeded(); scriptReady = true }
             catch { fputs("Warning: failed to download init scripts: \(error)\n", stderr) }
@@ -666,26 +667,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     // ─── LaunchDaemon: 开机自动初始化 Touch Bar ──────────────────────────────
     // CoreBrightness 的 Touch Bar 子系统在每次重启后需要重新初始化。
     // 安装 LaunchDaemon，每次开机自动运行 init_touchbar.swift。
-
-    /// 检查 LaunchDaemon 是否已被 launchctl 加载
-    private func isDaemonLoaded() -> Bool {
-        let proc = Process()
-        proc.executableURL = URL(fileURLWithPath: "/bin/launchctl")
-        proc.arguments = ["list", "com.touchbarbrightness.init"]
-        let pipe = Pipe()
-        proc.standardOutput = pipe
-        proc.standardError = pipe
-        do {
-            try proc.run()
-            proc.waitUntilExit()
-            let data = pipe.fileHandleForReading.readDataToEndOfFile()
-            let output = String(data: data, encoding: .utf8) ?? ""
-            // 如果输出包含 "Could not find service" 或退出码非0，说明未加载
-            return proc.terminationStatus == 0 && !output.contains("Could not find service")
-        } catch {
-            return false
-        }
-    }
 
     private func setupLaunchDaemon() {
         let scriptsDir = ScriptDownloader.scriptsDir

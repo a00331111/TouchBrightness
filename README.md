@@ -25,7 +25,7 @@
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/version-1.5.2-blue" alt="Version">
+  <img src="https://img.shields.io/badge/version-1.5.3-blue" alt="Version">
   <img src="https://img.shields.io/badge/macOS-12%2B-brightgreen" alt="macOS 12+">
   <img src="https://img.shields.io/badge/Swift-5-f05138?logo=swift" alt="Swift">
   <img src="https://img.shields.io/badge/languages-11-orange" alt="11 Languages">
@@ -66,7 +66,7 @@ TouchBrightness 就是为了解决这些问题而写的。它通过 LaunchDaemon
 
 ### 1. 下载
 
-从 [Releases](https://github.com/a00331111/TouchBrightness/releases) 下载最新版本 `TouchBrightness-v1.5.2.zip`，解压后得到 `TouchBrightness.app`。
+从 [Releases](https://github.com/a00331111/TouchBrightness/releases) 下载最新版本 `TouchBrightness-v1.5.3.zip`，解压后得到 `TouchBrightness.app`。
 
 ### 2. 首次运行
 
